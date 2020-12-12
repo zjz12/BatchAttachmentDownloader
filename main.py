@@ -11,26 +11,30 @@ Python 3开发，支持IMAP4与POP3协议
 
 2020.10.22
 Jiajie Li
+
+2020.12.11
+very good zjz change a little for my darling
 """
 
 import email_helper
+import re
 
 # ************************请设置以下参数************************
 
 # 邮箱地址  （必填）
-EMAIL_ADDRESS = '*****your email address*****'
+EMAIL_ADDRESS = ''
 # 邮箱密码  （必填）
-EMAIL_PASSWORD = '*****your email password*****'
+EMAIL_PASSWORD = ''
 
 # 邮件协议  （必填，POP3或IMAP）
 EMAIL_PROTOCOL = 'POP3'
 # 服务器地址(SSL)    （必填，请根据协议填入合适的地址）
-SERVER_ADDRESS = 'pop.qq.com'
+SERVER_ADDRESS = 'pop.139.com'
 
 # 附件保存位置
-SAVE_PATH = 'F:\\Email-Attachments'
+SAVE_PATH = 'C:\emailFiles'
 # 筛选起止时间    yyyy-MM-dd HH:mm:ss
-DATE_BEGIN, DATE_END = '2020-10-20 00:00', '2020-11-5 18:00'  # 筛选起止时间（包含此时间）
+DATE_BEGIN, DATE_END = '2020-10-16 00:00', ''  # 筛选起止时间（包含此时间）
 # 时区 默认东八区北京时间，如需更改请按如下格式更改
 TIME_ZONE = '+0800'
 # 筛选包含此内容的邮件地址，''表示全部邮件地址
@@ -47,12 +51,66 @@ SUBJECT = ''
 【3：每个发件人的每个邮件主题一个文件夹】
 【4：每个发件人昵称一个文件夹】
 """
-SAVE_MODE = 1
+SAVE_MODE = 0
 
 # ************************请设置以上参数************************
 
-
 if __name__ == '__main__':
+    with open("config.txt",'r') as f:
+        lines = f.readlines()
+        pat = re.compile(r'\'(.*)\'')
+        for line in lines:
+            if 'EMAIL_ADDRESS' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    EMAIL_ADDRESS = tmp[0]
+
+            if 'EMAIL_PASSWORD' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    EMAIL_PASSWORD = tmp[0]
+
+            if 'SAVE_PATH' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    SAVE_PATH = tmp[0]#.replace('\\','\\\\')
+
+            if 'DATE_BEGIN' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    DATE_BEGIN = tmp[0]
+
+            if 'DATE_END' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    DATE_END = tmp[0]
+
+            if 'FROM_ADDRESS' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    FROM_ADDRESS = tmp[0]
+
+            if 'FROM_NAME' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    FROM_NAME = tmp[0]
+
+            if 'SUBJECT' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    SUBJECT = tmp[0]
+
+            if 'SAVE_MODE' in line:
+                tmp = pat.findall(line)
+                if len(tmp) > 0:
+                    SAVE_MODE = tmp[0]
+            #print(line)
+            if line[0] in ['', '#']:
+                continue
+
+
+
+
     # 服务器连接与邮箱登录
     downloader = email_helper.BatchEmail(EMAIL_PROTOCOL, SERVER_ADDRESS, EMAIL_ADDRESS, EMAIL_PASSWORD)
 

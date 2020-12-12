@@ -186,14 +186,24 @@ class DateJudge(EmailJudge):
 
     def judge(self):
         # Date格式'4 Jan 2020 11:59:25 +0800'
+        flag = True
+        if self.__email_date == '':
+            return True
         date_mail = datetime.datetime.strptime(self.__email_date, '%d %b %Y %H:%M:%S %z')
-        date_begin = datetime.datetime.strptime((self.__date_begin + self.__time_zone), '%Y-%m-%d %H:%M%z')
-        date_end = datetime.datetime.strptime((self.__date_end + self.__time_zone), '%Y-%m-%d %H:%M%z')
-        return date_begin < date_mail < date_end
+        if self.__date_begin != "":
+            date_begin = datetime.datetime.strptime((self.__date_begin + self.__time_zone), '%Y-%m-%d %H:%M%z')
+            flag = date_begin < date_mail
+        if self.__date_end != "":
+            date_end = datetime.datetime.strptime((self.__date_end + self.__time_zone), '%Y-%m-%d %H:%M%z')
+            flag = date_mail < date_end
+
+        return flag
 
     @staticmethod
     # 比较是否比Target时间更早，用于结束邮件遍历的循环。包含时区。
     def is_earlier(email_time, target_time):
+        if email_time == '':  # zjz add 2020.12.11
+            return False
         email_datetime = datetime.datetime.strptime(email_time, '%d %b %Y %H:%M:%S %z')
         target_datetime = datetime.datetime.strptime(target_time, '%Y-%m-%d %H:%M%z')
         return email_datetime < target_datetime
@@ -251,7 +261,7 @@ class BatchEmail:
         self.save_path = 'Email-Attachments'  # 附件保存位置
 
         # 筛选属性
-        self.date_begin, self.date_end = '2020-1-1 00:00', '2020-1-4 20:00'  # 筛选属性：起止时间
+        self.date_begin, self.date_end = '2020-10-16 00:00', ''  # 筛选属性：起止时间
         self.time_zone = '+0800'  # 筛选属性：时区
         self.from_address = ''  # 筛选属性：发件人地址
         self.from_name = ''  # 筛选属性：发件人姓名
@@ -293,6 +303,7 @@ class BatchEmail:
                 content_byte = self.__receiver.get_mail_header_bytes(mail_number)
                 mail_message = self.parse_mail_byte_content(content_byte)
                 message_info = self.__get_email_info(mail_message)
+                #print(""message_info)
             except Exception as e:
                 print('邮件接收或解码失败，邮件编号：[%s]  错误信息：%s' % (mail_number, e))
                 error_count += 1
@@ -305,7 +316,9 @@ class BatchEmail:
             email_filter.add_judge(NameJudge(self.from_name, message_info.from_name))
 
             # 超出设定的最早时间则结束循环
-            if DateJudge.is_earlier(message_info.date, self.date_begin + self.time_zone):
+            if self.date_begin != '' and DateJudge.is_earlier(message_info.date, self.date_begin + self.time_zone):
+                print('( %d / %d )【%s】已经超出最早时限，提前退出。' % (
+                    len(mail_list) - int(mail_number) + 1, len(mail_list), message_info.subject))
                 break
 
             if email_filter.judge_conditions():
@@ -321,9 +334,12 @@ class BatchEmail:
             else:
                 print('( %d / %d )【%s】不符合筛选条件，下一封' % (
                     len(mail_list) - int(mail_number) + 1, len(mail_list), message_info.subject))
-        print('处理完成')
+
         if error_count > 0:
             print('有 %d 个邮件发生错误，请手动检查' % error_count)
+
+        print('\n处理完啦! 附件存于：%s. \n愿格格工作愉快。\n爱你 :)\n' % self.save_path)
+        os.system("pause")
 
     def close(self):
         self.__receiver.close()
@@ -382,7 +398,7 @@ class BatchEmail:
 
         date = message.get('Date')
         # 少数情况下无Data字段，Received
-        if date is None:
+        if date is None or date == '':
             received = message.get('Received')
             if received is None:
                 # 极少数邮件信息头内没有时间信息，偶发于一些系统发送的邮件
@@ -396,7 +412,7 @@ class BatchEmail:
                 break
         date = date.replace('GMT', '+0000')  # 部分邮件用GMT表示
         email_info.date = date[date_begin_index:date.find(':') + 12]
-
+        print("date:%s"% email_info.date)
         return email_info
 
 
